@@ -8,13 +8,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   let contextNone2D = canvasNone.getContext('2d')
   let clientX, clientY
 
-  const STATUS = ['STOP', 'JS', 'WASM', 'JSWorker']
+  const STATUS = ['STOP', 'JS', 'WASM', 'JSWorker', 'WebGL']
   let globalStatus = 'STOP'
 
   // 计算每一帧用时的数组
   const jsTimeRecords = [],
     wasmTimeRecords = [],
-    jsWorkerTimeRecords = []
+    jsWorkerTimeRecords = [],
+    webglRecords = []
 
   // 初始化 canvas
   video.addEventListener('loadeddata', () => {
@@ -62,7 +63,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       video.videoWidth,
       video.videoHeight
     )
-
     switch (globalStatus) {
       case 'JS': {
         pixels.data.set(toGreyJS(pixels.data, clientX, clientY))
@@ -76,6 +76,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         pixels.data.set(await toGreyJSWorker(pixels.data, clientX, clientY))
         break
       }
+    }
+
+    if (globalStatus === 'WebGL') {
+      canvas.setAttribute('style', 'filter: grayscale(100%);')
+    } else {
+      canvas.setAttribute('style', '')
     }
 
     // 绘制数据到 canvas
@@ -99,6 +105,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       case 'JSWorker': {
         jsWorkerTimeRecords.push(timeUsed)
         fpsNumDisplayElement.innerHTML = calcFPS(jsWorkerTimeRecords)
+        break
+      }
+      case 'WebGL': {
+        webglRecords.push(timeUsed)
+        fpsNumDisplayElement.innerHTML = calcFPS(webglRecords)
         break
       }
       default:
@@ -149,8 +160,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const view = new Uint8Array(sharedArray, 0)
       view.set(data)
 
-      // const workNums = navigator.hardwareConcurrency
-      const workNums = 1
+      const workNums = navigator.hardwareConcurrency
+      // const workNums = 1
       let finishCount = 0
       const perSize = (width * height) / workNums
       const onMessage = () => {
