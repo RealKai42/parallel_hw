@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function calcFPS(vector) {
-    const AVERAGE_RECORDS_COUNT = 100
+    const AVERAGE_RECORDS_COUNT = 50
     if (vector.length > AVERAGE_RECORDS_COUNT) {
       vector.shift(-1)
     } else {
@@ -122,10 +122,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // WASM 处理
-  // filters functions.
   const dataOffset = cppGetDataPtr()
   let Uint8View = new Uint8Array(memory.buffer)
-
   function toGreyWasm(pixelData, width, height) {
     const arLen = pixelData.length
 
