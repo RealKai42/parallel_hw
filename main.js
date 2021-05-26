@@ -3,20 +3,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   let fpsNumDisplayElement = document.querySelector('.fps-num')
   let canvas = document.querySelector('.canvas')
   let context2D = canvas.getContext('2d')
+
+  let canvasNone = document.querySelector('.canvasNone')
+  let contextNone2D = canvasNone.getContext('2d')
   let clientX, clientY
 
-  const STATUS = ['STOP', 'JSWorker', 'WASM', 'WebGL']
+  const STATUS = ['STOP', 'JS', 'WASM', 'JSWorker']
   let globalStatus = 'STOP'
 
   // 计算每一帧用时的数组
   const jsTimeRecords = [],
     wasmTimeRecords = [],
-    webGLTimeRecords = []
+    jsWorkerTimeRecords = []
+
+  // 初始化 canvas
+  video.addEventListener('loadeddata', () => {
+    console.log('视频加载完毕')
+    // 设置 canvas 宽高
+    canvas.setAttribute('height', video.videoHeight)
+    canvas.setAttribute('width', video.videoWidth)
+    canvasNone.setAttribute('height', video.videoHeight)
+    canvasNone.setAttribute('width', video.videoWidth)
+    clientX = canvas.clientWidth
+    clientY = canvas.clientHeight
+
+    // 开始绘制
+    draw(context2D)
+  })
 
   // 加载 wasm
   let { instance } = await WebAssembly.instantiateStreaming(fetch('./dip.wasm'))
   let { cppConvFilter, cppGetDataPtr, memory } = instance.exports
-  console.log(instance)
 
   // 自动播放视频
   let promise = video.play()
@@ -26,18 +43,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
   }
 
-  // 初始化 canvas
-  video.addEventListener('loadeddata', () => {
-    // 设置 canvas 宽高
-    canvas.setAttribute('height', video.videoHeight)
-    canvas.setAttribute('width', video.videoWidth)
-    clientX = canvas.clientWidth
-    clientY = canvas.clientHeight
-
-    // 开始绘制
-    draw(context2D)
-  })
-
   // 添加 button 响应
   document.querySelector('button').addEventListener('click', () => {
     globalStatus =
@@ -46,14 +51,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       ]
   })
 
-  function draw() {
+  async function draw() {
     const timeStart = performance.now()
-    context2D.drawImage(video, 0, 0)
+    contextNone2D.drawImage(video, 0, 0)
 
     // 获取当前帧数据
-    pixels = context2D.getImageData(0, 0, video.videoWidth, video.videoHeight)
+    const pixels = contextNone2D.getImageData(
+      0,
+      0,
+      video.videoWidth,
+      video.videoHeight
+    )
+
     switch (globalStatus) {
-      case 'JSWorker': {
+      case 'JS': {
         pixels.data.set(toGreyJS(pixels.data, clientX, clientY))
         break
       }
@@ -61,16 +72,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         pixels.data.set(toGreyWasm(pixels.data, clientX, clientY))
         break
       }
+      case 'JSWorker': {
+        pixels.data.set(await toGreyJSWorker(pixels.data, clientX, clientY))
+        break
+      }
     }
 
     // 绘制数据到 canvas
     context2D.putImageData(pixels, 0, 0)
+
     // 计算绘制用时
     let timeUsed = performance.now() - timeStart
 
     // 更新绘制用时
     switch (globalStatus) {
-      case 'JSWorker': {
+      case 'JS': {
         jsTimeRecords.push(timeUsed)
         fpsNumDisplayElement.innerHTML = calcFPS(jsTimeRecords)
         break
@@ -78,6 +94,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       case 'WASM': {
         wasmTimeRecords.push(timeUsed)
         fpsNumDisplayElement.innerHTML = calcFPS(wasmTimeRecords)
+        break
+      }
+      case 'JSWorker': {
+        jsWorkerTimeRecords.push(timeUsed)
+        fpsNumDisplayElement.innerHTML = calcFPS(jsWorkerTimeRecords)
         break
       }
       default:
@@ -121,6 +142,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     return data
   }
 
+  function toGreyJSWorker(data, width, height) {
+    // 普通 JS 多线程
+    return new Promise((resolve, reject) => {
+      const sharedArray = new SharedArrayBuffer(width * height * 4)
+      const view = new Uint8Array(sharedArray, 0)
+      view.set(data)
+
+      // const workNums = navigator.hardwareConcurrency
+      const workNums = 1
+      let finishCount = 0
+      const perSize = (width * height) / workNums
+      const onMessage = () => {
+        finishCount++
+        if (finishCount === workNums) {
+          resolve(view)
+        }
+      }
+
+      for (let i = 0; i < workNums; i++) {
+        const myWorker = new Worker('./toGrey.js')
+        myWorker.onmessage = onMessage
+        myWorker.postMessage({
+          array: sharedArray,
+          start: i * perSize,
+          end: (i + 1) * perSize,
+        })
+      }
+    })
+  }
+
   // WASM 处理
   const dataOffset = cppGetDataPtr()
   let Uint8View = new Uint8Array(memory.buffer)
@@ -132,5 +183,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     cppConvFilter(width, height)
     // retrieve data.
     return Uint8View.subarray(dataOffset, dataOffset + arLen)
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 })
