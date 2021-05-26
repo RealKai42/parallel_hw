@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function calcFPS(vector) {
-    const AVERAGE_RECORDS_COUNT = 50
+    const AVERAGE_RECORDS_COUNT = 20
     if (vector.length > AVERAGE_RECORDS_COUNT) {
       vector.shift(-1)
     } else {
