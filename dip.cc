@@ -22,6 +22,6 @@ extern "C" {
       data[i + 1] = v;
       data[i + 2] = v;
       data[i + 3] = a;
-  } 
+    } 
   }
 }

@@ -16,9 +16,5 @@ self.onmessage = ({ data }) => {
     view[i * 4 + 3] = a
   }
 
-  // console.log(view[0])
-  // view[0] = 12
-  // console.log(view[0])
-
-  self.postMessage('1')
+  self.postMessage('完成')
 }

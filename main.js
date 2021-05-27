@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 初始化 canvas
   video.addEventListener('loadeddata', () => {
     console.log('视频加载完毕')
+
     // 设置 canvas 宽高
     canvas.setAttribute('height', video.videoHeight)
     canvas.setAttribute('width', video.videoWidth)
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function draw() {
     const timeStart = performance.now()
+    // 讲视频的帧绘制到隐藏的图片中
     contextNone2D.drawImage(video, 0, 0)
 
     // 获取当前帧数据
@@ -86,7 +88,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 绘制数据到 canvas
     context2D.putImageData(pixels, 0, 0)
-
     // 计算绘制用时
     let timeUsed = performance.now() - timeStart
 
@@ -126,8 +127,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (vector.length > AVERAGE_RECORDS_COUNT) {
       vector.shift(-1)
     } else {
-      return 'NaN'
+      return 'Calculating'
     }
+
     let averageTime =
       vector.reduce((pre, item) => {
         return pre + item
@@ -153,8 +155,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     return data
   }
 
+  // 普通 JS 多线程
   function toGreyJSWorker(data, width, height) {
-    // 普通 JS 多线程
     return new Promise((resolve, reject) => {
       const sharedArray = new SharedArrayBuffer(width * height * 4)
       const view = new Uint8Array(sharedArray, 0)
