@@ -10,4 +10,4 @@
  node node-wasm-server.js
 ```
 
-2. 使用浏览器打开 http://localhost:8888/index.html，建议使用 **Chrome** 浏览器
+2. 使用浏览器打开 http://localhost:8888/index.html ，建议使用 **Chrome** 浏览器
