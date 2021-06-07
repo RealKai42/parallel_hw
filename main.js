@@ -163,7 +163,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       view.set(data)
 
       const workNums = navigator.hardwareConcurrency
-      // const workNums = 1
       let finishCount = 0
       const perSize = (width * height) / workNums
       const onMessage = () => {
@@ -186,16 +185,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // WASM 处理
+  // 获取 C/C++ 中存有帧像素数据的数组，在 Wasm 线性内存段中的偏移位置
   const dataOffset = cppGetDataPtr()
+  // 为 Wasm 模块的线性内存段设置用于进行数据操作的视图
   let Uint8View = new Uint8Array(memory.buffer)
   function toGreyWasm(pixelData, width, height) {
-    const arLen = pixelData.length
-
+    const len = pixelData.length
+    // 填充当前帧画面的像素数据
     Uint8View.set(pixelData, dataOffset)
-    // core.
+    // 调用灰度化处理函数
     cppConvFilter(width, height)
-    // retrieve data.
-    return Uint8View.subarray(dataOffset, dataOffset + arLen)
+    // 返回经过处理的数据
+    return Uint8View.subarray(dataOffset, dataOffset + len)
   }
 
   function sleep(ms) {
