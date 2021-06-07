@@ -14,6 +14,9 @@
 
 # 实验报告
 
+在线系统: https://parallel.kaiyi.cloud/  
+源代码: https://github.com/Kaiyiwing/parallel_hw
+
 ### 背景
 
 图像灰度化是相对容易的图像算法，因其对像素的处理不需要考虑其他像素的数据，也很适合进行并行计算。
