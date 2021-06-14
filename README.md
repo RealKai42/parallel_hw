@@ -2,6 +2,10 @@
 
 本实验通过实现简单的 RGB to Grey 算法，在原生 JS、WebAssembly、JS Worker 多线程、CSS Filter (GPU 并行加速)几种环境下进行性能对比。
 
+# 在线体验
+
+https://pc.kaiyi.cloud/
+
 # 快速开始
 
 1. 开启本地 `node` 服务器
