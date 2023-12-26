@@ -4,7 +4,7 @@
 
 # 在线体验
 
-https://pc.kaiyi.cloud/
+[parallel.kaiyi.cool](https://parallel.kaiyi.cool/)
 
 # 快速开始
 
